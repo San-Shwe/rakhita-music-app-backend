@@ -4,9 +4,10 @@ const express = require("express");
 const morgan = require("morgan");
 require("dotenv").config(); // import dot env
 const postRouter = require("./routers/post");
+const cors = require("cors");
 
 const app = express();
-
+app.use(cors({ origin: "http://localhost:3000" }));
 app.use(express.json());
 app.use(morgan("dev"));
 app.use("/api/post", postRouter);
