@@ -9,19 +9,20 @@ const FEATURED_POST_COUNT = 4;
 
 const addToFeaturedPost = async (postId) => {
   // cancel to add data if current post is already exit
-  const isAlreadyExits = await Post.findOne({ post: postId });
-  if (isAlreadyExits) return;
+  const isAlreadyExits = await FeaturedPost.findOne({ post: postId });
+  if (isAlreadyExits)
+    return console.log("already exist featured post", isAlreadyExits);
 
   const featuredPost = new FeaturedPost({ post: postId });
   await featuredPost.save();
 
+  console.log("add to featured post");
+  /// delete post if featured post is exceeded than 4 posts
   const featuredPosts = await FeaturedPost.find({}).sort({ createdAt: -1 }); // FeaturedPost not featuredPost (syntax error)
-  // console.log("-----------featured post------------>", featuredPost);
   featuredPosts.forEach(async (post, index) => {
     if (index >= FEATURED_POST_COUNT)
       await FeaturedPost.findByIdAndDelete(post._id);
   });
-  console.log("add to featured post");
 };
 
 const removeFromFeaturePost = async (postId) => {
@@ -43,7 +44,7 @@ exports.createPost = async (req, res) => {
     return res.status(401).json({ error: "Please use unique slug" });
 
   const newPost = new Post({ title, meta, content, slug, author, tags });
-  console.log(newPost);
+
   if (file) {
     const { secure_url: url, public_id } = await cloudinary.uploader.upload(
       file.path
@@ -95,7 +96,6 @@ exports.deletePost = async (req, res) => {
 exports.updatePost = async (req, res) => {
   const { title, meta, content, slug, author, tags, featured } = req.body; // destruct reqest body
   const { file } = req;
-
   const { postId } = req.params;
   if (!isValidObjectId(postId))
     return res.status(401).json({ error: "Invalid request!" });
@@ -127,8 +127,10 @@ exports.updatePost = async (req, res) => {
 
   if (featured) {
     await addToFeaturedPost(post._id);
+    console.log("featured post");
   } else {
     await removeFromFeaturePost(post._id);
+    console.log("not featured post");
   }
 
   await post.save();
